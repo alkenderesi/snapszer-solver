@@ -1,0 +1,22 @@
+// Format details:
+// https://containers.dev/implementors/json_reference/
+{
+	"name": "python",
+
+	// Use existing Docker images:
+	// https://hub.docker.com/search?q=
+	"image": "python:3.11",
+
+	// Configure tool-specific properties:
+	// https://containers.dev/supporting
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.black-formatter",
+				"ms-python.pylint",
+				"github.copilot"
+			]
+		}
+	}
+}
