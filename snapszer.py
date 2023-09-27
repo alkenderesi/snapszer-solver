@@ -1,6 +1,4 @@
-from copy import deepcopy
-from typing import Union
-import random
+"""Snapszer module."""
 
 
 class Card:
@@ -66,7 +64,7 @@ class Player:
         )
 
 
-class Game:
+class Snapszer:
     DECK = tuple(Card(suit, rank) for suit in Card.SUITS for rank in Card.RANKS)
 
     def __init__(
@@ -75,7 +73,8 @@ class Game:
         self.players = players
         self.card_history = card_history
         self.trump_card = trump_card
-        self.max_rounds = len(Game.DECK) // len(players)
+        self.max_rounds = len(Snapszer.DECK) // len(self.players)
+        self.update()
 
     def __str__(self) -> str:
         INDENTATION = " " * 4
@@ -92,14 +91,14 @@ class Game:
             card_history_str += f"{round[-1]} ]\n"
 
         return (
-            f"Game with {len(self.players)} players:\n{players_str}"
+            f"Snapszer with {len(self.players)} players:\n{players_str}"
             f"Card history:\n{card_history_str}"
             f"Trump card: {self.trump_card}"
         )
 
     def __repr__(self) -> str:
         return (
-            f"Game(players={self.players}, "
+            f"Snapszer(players={self.players}, "
             f"card_history={self.card_history}, "
             f"trump_card={self.trump_card})"
         )
@@ -112,98 +111,70 @@ class Game:
     def current_player(self) -> Player:
         return self.players[len(self.current_round)]
 
-    def called_card(self) -> Union[Card, None]:
-        return self.current_round[0] if self.current_round else None
+    def update(self):
+        self._update_called_card()
+        self._update_winning_card()
+        self._update_winning_player()
+        self._update_playable_cards()
 
-    def winning_card(self) -> Union[Card, None]:
-        winning_card = self.called_card()
+    def _update_called_card(self) -> None:
+        self.called_card = self.current_round[0] if self.current_round else None
+
+    def _update_winning_card(self) -> None:
+        self.winning_card = self.called_card
         for card in self.current_round[1:]:
-            if card.beats(winning_card, self.trump_card):
-                winning_card = card
-        return winning_card
+            if card.beats(self.winning_card, self.trump_card):
+                self.winning_card = card
 
-    def playable_cards(self) -> tuple[Card]:
+    def _update_winning_player(self) -> None:
+        self.winning_player = (
+            self.players[self.current_round.index(self.winning_card)]
+            if self.winning_card
+            else None
+        )
+
+    def _update_playable_cards(self) -> None:
         # Case 1
         if len(self.current_round) == 0:
-            return self.current_player.hand
+            self.playable_cards = self.current_player.hand
+            return
 
         # Case 2
         if len(self.current_round) == len(self.players):
-            return []
-
-        called_card = self.called_card()
-        winnig_card = self.winning_card()
+            self.playable_cards = []
+            return
 
         # Case 3
-        playable_cards = tuple(
+        self.playable_cards = tuple(
             filter(
-                lambda card: card.suit == called_card.suit,
+                lambda card: card.suit == self.called_card.suit,
                 self.current_player.hand,
             )
         )
-        higher_value_check = called_card.suit == winnig_card.suit
+        higher_value_check = self.called_card.suit == self.winning_card.suit
 
         # Case 4
-        if not playable_cards:
-            playable_cards = tuple(
+        if not self.playable_cards:
+            self.playable_cards = tuple(
                 filter(
                     lambda card: card.suit == self.trump_card.suit,
                     self.current_player.hand,
                 )
             )
-            higher_value_check = winnig_card.suit == self.trump_card.suit
+            higher_value_check = self.winning_card.suit == self.trump_card.suit
 
         # Case 5
-        if not playable_cards:
-            playable_cards = self.current_player.hand
+        if not self.playable_cards:
+            self.playable_cards = self.current_player.hand
             higher_value_check = False
 
         # Special case
         if higher_value_check:
             higher_value_cards = tuple(
                 filter(
-                    lambda card: card.value > winnig_card.value,
-                    playable_cards,
+                    lambda card: card.value > self.winning_card.value,
+                    self.playable_cards,
                 )
             )
             if higher_value_cards:
-                playable_cards = higher_value_cards
-
-        return playable_cards
-
-
-# TODO:
-# 1. Create a valid looking Game instance
-# 2. Get the following info from the data:
-# - Which player started the game? (player ref)
-# - Which player is the winner of the current round? (player ref)
-# - How many points did the winner of the current round gain? (int)
-# - Has the trump card been played this game? (bool)
-# - Which players belong to the trump card team? (player ref list)
-# - What are the valid cards to play for the upcoming player? (card list)
-# - What is the order of the players in the next round? (player ref list)
-
-
-deck = list(Game.DECK)
-random.shuffle(deck)
-
-hand_1 = deck[0:5]
-hand_2 = deck[5:10]
-hand_3 = deck[10:15]
-hand_4 = deck[15:21]
-
-player_1 = Player(name="Player 1", hand=hand_1, points=0, bonus_points=0)
-player_2 = Player(name="Player 2", hand=hand_2, points=0, bonus_points=0)
-player_3 = Player(name="Player 3", hand=hand_3, points=0, bonus_points=0)
-player_4 = Player(name="Player 4", hand=hand_4, points=0, bonus_points=0)
-
-game = Game(
-    players=[player_1, player_2, player_3, player_4],
-    card_history=[
-        [deck[-1], deck[-2], deck[-3]],
-    ],
-    trump_card=random.choice(deck),
-)
-
-print(game, "\n", sep="")
-print("Playable:", game.playable_cards())
+                self.playable_cards = higher_value_cards
