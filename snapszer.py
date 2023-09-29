@@ -74,7 +74,6 @@ class Snapszer:
         self.card_history = card_history
         self.trump_card = trump_card
         self.max_rounds = len(Snapszer.DECK) // len(self.players)
-        self.update()
 
     def __str__(self) -> str:
         INDENTATION = " " * 4
@@ -108,73 +107,76 @@ class Snapszer:
         return self.card_history[-1]
 
     @property
+    def current_round_starting(self) -> bool:
+        return len(self.current_round) == 0
+
+    @property
+    def current_round_over(self) -> bool:
+        return len(self.current_round) == len(self.players)
+
+    @property
     def current_player(self) -> Player:
         return self.players[len(self.current_round)]
 
-    def update(self):
-        self._update_called_card()
-        self._update_winning_card()
-        self._update_winning_player()
-        self._update_playable_cards()
+    @property
+    def called_card(self) -> Card:
+        return self.current_round[0]
 
-    def _update_called_card(self) -> None:
-        self.called_card = self.current_round[0] if self.current_round else None
-
-    def _update_winning_card(self) -> None:
-        self.winning_card = self.called_card
+    def winning_card(self) -> Card:
+        winning_card = self.called_card
         for card in self.current_round[1:]:
-            if card.beats(self.winning_card, self.trump_card):
-                self.winning_card = card
+            if card.beats(winning_card, self.trump_card):
+                winning_card = card
+        return winning_card
 
-    def _update_winning_player(self) -> None:
-        self.winning_player = (
-            self.players[self.current_round.index(self.winning_card)]
-            if self.winning_card
-            else None
-        )
+    def winning_player(self, winning_card: Card) -> Player:
+        return self.players[self.current_round.index(winning_card)]
 
-    def _update_playable_cards(self) -> None:
+    def playable_cards(self, winning_card: Card) -> tuple[Card]:
         # Case 1
-        if len(self.current_round) == 0:
-            self.playable_cards = self.current_player.hand
-            return
+        if self.current_round_starting:
+            return tuple(self.current_player.hand)
 
         # Case 2
-        if len(self.current_round) == len(self.players):
-            self.playable_cards = []
-            return
+        if self.current_round_over:
+            return tuple()
 
         # Case 3
-        self.playable_cards = tuple(
+        playable_cards = tuple(
             filter(
                 lambda card: card.suit == self.called_card.suit,
                 self.current_player.hand,
             )
         )
-        higher_value_check = self.called_card.suit == self.winning_card.suit
+        higher_value_check = self.called_card.suit == winning_card.suit
 
         # Case 4
-        if not self.playable_cards:
-            self.playable_cards = tuple(
+        if not playable_cards:
+            playable_cards = tuple(
                 filter(
                     lambda card: card.suit == self.trump_card.suit,
                     self.current_player.hand,
                 )
             )
-            higher_value_check = self.winning_card.suit == self.trump_card.suit
+            higher_value_check = winning_card.suit == self.trump_card.suit
 
         # Case 5
-        if not self.playable_cards:
-            self.playable_cards = self.current_player.hand
+        if not playable_cards:
+            playable_cards = self.current_player.hand
             higher_value_check = False
 
         # Special case
         if higher_value_check:
             higher_value_cards = tuple(
                 filter(
-                    lambda card: card.value > self.winning_card.value,
-                    self.playable_cards,
+                    lambda card: card.value > winning_card.value,
+                    playable_cards,
                 )
             )
             if higher_value_cards:
-                self.playable_cards = higher_value_cards
+                playable_cards = higher_value_cards
+
+        return playable_cards
+
+    def solve():
+        pass
