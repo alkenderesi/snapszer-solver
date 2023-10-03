@@ -5,7 +5,7 @@
 
 	// Use existing Docker images:
 	// https://hub.docker.com/search?q=
-	"image": "python:3.11",
+	"image": "python:3.12",
 
 	// Configure tool-specific properties:
 	// https://containers.dev/supporting
