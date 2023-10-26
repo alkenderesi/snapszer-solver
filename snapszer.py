@@ -14,29 +14,52 @@ class Card:
                 f"Invalid rank: '{rank}'\nValid options: {", ".join(Card.RANKS)}"
             )
 
-        self._suit = suit
-        self._rank = rank
+        self.suit = suit
+        self.rank = rank
 
     def __str__(self) -> str:
-        return f"{self._suit} {self._rank}"
+        return f"{self.suit} {self.rank}"
 
     def __repr__(self) -> str:
-        return f"Card(suit={self._suit}, rank={self._rank})"
+        return f"Card(suit={self.suit}, rank={self.rank})"
 
     def __eq__(self, other: "Card") -> bool:
-        return self._suit == other._suit and self._rank == other._rank
+        return self.suit == other.suit and self.rank == other.rank
 
     def __hash__(self) -> int:
-        return hash((self._suit, self._rank))
-
-    @property
-    def suit(self):
-        return self._suit
-
-    @property
-    def rank(self):
-        return self._rank
+        return hash((self.suit, self.rank))
 
     @property
     def value(self) -> int:
-        return Card.VALUES[self._rank]
+        return Card.VALUES[self.rank]
+
+
+class Player:
+    def __init__(self) -> None:
+        self.points = 0
+        self.bonus_points = 0
+        self.hand: set[Card] = set()
+
+    def __str__(self) -> str:
+        return (
+            f"Player has {self.points} points, "
+            f"{self.bonus_points} bonus points "
+            f"and {len(self.hand)} cards: {", ".join(self.hand)}"
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"Player(points={self.points}, "
+            f"bonus_points={self.bonus_points}, "
+            f"hand={self.hand})"
+        )
+
+    def __eq__(self, other: "Player") -> bool:
+        return (
+            self.points == other.points
+            and self.bonus_points == other.bonus_points
+            and self.hand == other.hand
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.points, self.bonus_points, frozenset(self.hand)))
