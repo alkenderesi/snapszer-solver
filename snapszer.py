@@ -1,17 +1,17 @@
 class Card:
     VALUES = {"IX": 0, "ALSO": 2, "FELSO": 3, "KIRALY": 4, "X": 10, "ASZ": 11}
-    SUITS = frozenset({"PIROS", "ZOLD", "TOK", "MAKK"})
-    RANKS = frozenset(VALUES.keys())
+    SUITS = ("PIROS", "ZOLD", "TOK", "MAKK")
+    RANKS = tuple(VALUES.keys())
 
     def __init__(self, suit: str, rank: str) -> None:
         if suit not in Card.SUITS:
             raise ValueError(
-                f"Invalid suit: '{suit}'\nValid options: {", ".join(Card.SUITS)}"
+                f"Invalid suit: '{suit}'\nValid options: {', '.join(Card.SUITS)}"
             )
 
         if rank not in Card.RANKS:
             raise ValueError(
-                f"Invalid rank: '{rank}'\nValid options: {", ".join(Card.RANKS)}"
+                f"Invalid rank: '{rank}'\nValid options: {', '.join(Card.RANKS)}"
             )
 
         self.suit = suit
@@ -38,13 +38,13 @@ class Player:
     def __init__(self) -> None:
         self.points = 0
         self.bonus_points = 0
-        self.hand: set[Card] = set()
+        self.hand: list[Card] = []
 
     def __str__(self) -> str:
         return (
             f"Player has {self.points} points, "
-            f"{self.bonus_points} bonus points "
-            f"and {len(self.hand)} cards: {", ".join(self.hand)}"
+            f"{self.bonus_points} bonus points, "
+            f"and {len(self.hand)} cards: {', '.join(self.hand)}"
         )
 
     def __repr__(self) -> str:
@@ -62,4 +62,23 @@ class Player:
         )
 
     def __hash__(self) -> int:
-        return hash((self.points, self.bonus_points, frozenset(self.hand)))
+        return hash((self.points, self.bonus_points, tuple(self.hand)))
+
+
+class SnapszerBase:
+    DECK = tuple(Card(suit, rank) for suit in Card.SUITS for rank in Card.RANKS)
+
+    def __init__(self, player_count: int) -> None:
+        self.player_count = player_count
+        self.round_count= len(SnapszerBase.DECK) // player_count
+        self.players = [Player() for _ in range(player_count)]
+
+
+class ThreePlayerSnapszer(SnapszerBase):
+    def __init__(self) -> None:
+        super().__init__(player_count = 3)
+
+
+class FourPlayerSnapszer(SnapszerBase):
+    def __init__(self) -> None:
+        super().__init__(player_count = 4)
