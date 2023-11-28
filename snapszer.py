@@ -65,20 +65,22 @@ class Player:
         return hash((self.points, self.bonus_points, tuple(self.hand)))
 
 
-class SnapszerBase:
+class Snapszer:
     DECK = tuple(Card(suit, rank) for suit in Card.SUITS for rank in Card.RANKS)
 
     def __init__(self, player_count: int) -> None:
         self.player_count = player_count
-        self.round_count= len(SnapszerBase.DECK) // player_count
-        self.players = [Player() for _ in range(player_count)]
+        self.round_count = len(Snapszer.DECK) // self.player_count
+        self.trump_card: Card = None
+        self.players = [Player() for _ in range(self.player_count)]
+        self.card_history: list[list[Card]] = [[]]
 
 
-class ThreePlayerSnapszer(SnapszerBase):
+class ThreePlayerSnapszer(Snapszer):
     def __init__(self) -> None:
-        super().__init__(player_count = 3)
+        super().__init__(player_count=3)
 
 
-class FourPlayerSnapszer(SnapszerBase):
+class FourPlayerSnapszer(Snapszer):
     def __init__(self) -> None:
-        super().__init__(player_count = 4)
+        super().__init__(player_count=4)
