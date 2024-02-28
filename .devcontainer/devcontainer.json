@@ -1,0 +1,26 @@
+// Format details:
+// https://containers.dev/implementors/json_reference/
+{
+	"name": "jupyter",
+
+	// Use existing Docker images:
+	// https://hub.docker.com/search?q=
+	"image": "python:3.11",
+
+	// Commands after the container is built:
+	// https://containers.dev/implementors/json_reference/#lifecycle-scripts
+	"postCreateCommand": ". .devcontainer/setup.sh",
+
+	// Configure tool-specific properties:
+	// https://containers.dev/supporting
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.black-formatter",
+				"ms-toolsai.jupyter",
+				"github.copilot"
+			]
+		}
+	}
+}
