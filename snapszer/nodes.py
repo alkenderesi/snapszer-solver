@@ -24,19 +24,27 @@ class Node:
         return f"{self.__class__.__name__}({self.value})"
 
     def activate(self) -> None:
-        raise NotImplementedError
+        if self.choices:
+            raise IllegalStateError("Node is already active")
+        self._link()
+        self._create_choices()
 
     def deactivate(self) -> None:
-        if self.is_active:
-            raise IllegalStateError("Unable to deactivate node with active next node.")
-        if not self.is_root:
-            self.previous_node.next_node = None
+        if not self.choices:
+            raise IllegalStateError("Node is already inactive")
+        if self.next_node:
+            raise IllegalStateError("Node has a next node")
+        self._unlink()
+        self._clear_choices()
+
+    def _link(self) -> None:
+        self.previous_node.next_node = self
+
+    def _unlink(self) -> None:
+        self.previous_node.next_node = None
+
+    def _create_choices(self) -> None:
+        raise NotImplementedError
+
+    def _clear_choices(self) -> None:
         self.choices.clear()
-
-    @property
-    def is_active(self) -> bool:
-        return self.next_node is not None
-
-    @property
-    def is_root(self) -> bool:
-        return self.previous_node is None
