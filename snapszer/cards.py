@@ -1,43 +1,49 @@
 """Card related classes and constants."""
 
+from enum import Enum, IntEnum, auto
+from dataclasses import dataclass
 
+
+class Suit(Enum):
+    """Suits of hungarian-suited playing cards."""
+
+    PIROS = auto()
+    ZOLD = auto()
+    TOK = auto()
+    MAKK = auto()
+
+
+class Rank(IntEnum):
+    """Ranks of hungarian-suited playing cards."""
+
+    IX = 0
+    ALSO = 2
+    FELSO = 3
+    KIRALY = 4
+    X = 10
+    ASZ = 11
+
+
+@dataclass(frozen=True)
 class Card:
-    """Class representing hungarian-suited playing cards."""
+    """A hungarian-suited playing card."""
 
-    VALUES = {"IX": 0, "ALSO": 2, "FELSO": 3, "KIRALY": 4, "X": 10, "ASZ": 11}
-    SUITS = ("PIROS", "ZOLD", "TOK", "MAKK")
-    RANKS = tuple(VALUES.keys())
-
-    def __init__(self, suit: str, rank: str) -> None:
-        if suit not in Card.SUITS:
-            raise ValueError(
-                f"Invalid suit: '{suit}'\nValid options: {', '.join(Card.SUITS)}"
-            )
-
-        if rank not in Card.RANKS:
-            raise ValueError(
-                f"Invalid rank: '{rank}'\nValid options: {', '.join(Card.RANKS)}"
-            )
-
-        self.suit = suit
-        self.rank = rank
+    suit: Suit
+    rank: Rank
 
     def __str__(self) -> str:
-        return f"{self.suit} {self.rank}"
-
-    def __repr__(self) -> str:
-        return f"Card(suit={self.suit}, rank={self.rank})"
-
-    def __eq__(self, other: "Card") -> bool:
-        return self.suit == other.suit and self.rank == other.rank
+        return f"{self.suit.name} {self.rank.name}"
 
     def __hash__(self) -> int:
         return hash((self.suit, self.rank))
 
     @property
     def value(self) -> int:
-        return Card.VALUES[self.rank]
+        return self.rank.value
 
 
-DECK = tuple(Card(suit, rank) for suit in Card.SUITS for rank in Card.RANKS)
+BONUS_RANKS = frozenset({Rank.FELSO, Rank.KIRALY})
+"""Ranks required for a combination bonus."""
+
+DECK = frozenset(Card(suit, rank) for suit in Suit for rank in Rank)
 """A complete Snapszer deck with all 24 cards."""
