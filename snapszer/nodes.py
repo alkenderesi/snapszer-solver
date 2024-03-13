@@ -1,8 +1,7 @@
 """Nodes for the game tree."""
 
 from typing import Union, Any
-from .cards import Card, DECK
-from .game import Game
+from .cards import Suit, Rank, Card, DECK
 from .exceptions import IllegalStateError
 
 
@@ -12,7 +11,6 @@ class Node:
         self.value = value
         self.next_node: "Node" = None
         self.options: list["Node"] = []
-        self.game = previous_node.game if previous_node else Game()
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self.value})"
@@ -29,7 +27,6 @@ class Node:
         if self.is_active:
             raise IllegalStateError("Node is already active")
         self._link()
-        self._update_game()
         self._create_options()
 
     def deactivate(self):
@@ -38,7 +35,6 @@ class Node:
         if self.is_interlinked:
             raise IllegalStateError("Node has an active next node")
         self._unlink()
-        self._revert_game()
         self._clear_options()
 
     def _link(self):
@@ -46,12 +42,6 @@ class Node:
 
     def _unlink(self):
         self.previous_node.next_node = None
-
-    def _update_game(self):
-        return
-
-    def _revert_game(self):
-        return
 
     def _create_options(self):
         raise NotImplementedError
@@ -62,7 +52,7 @@ class Node:
 
 class Start(Node):
     def __init__(self):
-        super().__init__(None, None)
+        super().__init__(None)
 
     def _link(self):
         return
@@ -78,12 +68,6 @@ class PlayerCount(Node):
     def __init__(self, previous_node, value):
         super().__init__(previous_node, value)
 
-    def _update_game(self):
-        self.game.player_count = self.value
-
-    def _revert_game(self):
-        self.game.player_count = None
-
     def _create_options(self):
         self.options.extend(Order(self, order) for order in range(1, self.value + 1))
 
@@ -91,12 +75,6 @@ class PlayerCount(Node):
 class Order(Node):
     def __init__(self, previous_node, value):
         super().__init__(previous_node, value)
-
-    def _update_game(self):
-        pass
-
-    def _revert_game(self):
-        self.game.order.clear()
 
     def _create_options(self):
         self.options.extend(Draw(self, card) for card in DECK)
@@ -108,30 +86,36 @@ class Draw(Node):
 
     def _create_options(self):
         remaining_cards = set(DECK)
-        starting_hand: set[Card] = set()
         search_node = self
 
         while not isinstance(search_node, PlayerCount):
             if isinstance(search_node, Draw):
                 remaining_cards.remove(search_node.value)
-                starting_hand.add(search_node.value)
             search_node = search_node.previous_node
 
         player_count = search_node.value
         order = search_node.next_node.value
+        starting_hand = DECK.difference(remaining_cards)
         full_hand_size = len(DECK) // player_count
 
-        if len(starting_hand) == full_hand_size:
-            card_options = starting_hand if order == 1 else remaining_cards
-            self.options.extend(Play(self, card) for card in card_options)
+        if len(starting_hand) == full_hand_size and order == 1:
             self.options.extend(
-                Bonus(self, suit)
-                for suit in Card.SUITS
-                if Card(suit, "FELSO") in card_options
-                and Card(suit, "KIRALY") in card_options
+                (
+                    BonusPlay(self, card)
+                    if card.rank == Rank.FELSO
+                    and Card(card.suit, Rank.KIRALY) in starting_hand
+                    or card.rank == Rank.KIRALY
+                    and Card(card.suit, Rank.FELSO) in starting_hand
+                    else Play(self, card)
+                )
+                for card in starting_hand
             )
 
-        elif len(starting_hand) == full_hand_size // 2:
+        elif (
+            len(starting_hand) == full_hand_size
+            or len(starting_hand) == full_hand_size // 2
+            and order == 1
+        ):
             self.options.extend(TrumpCard(self, card) for card in DECK)
 
         else:
@@ -144,13 +128,30 @@ class TrumpCard(Node):
 
     def _create_options(self):
         remaining_cards = set(DECK)
-        search_node = self.previous_node
+        search_node = self
 
-        while isinstance(search_node, Draw):
-            remaining_cards.remove(search_node.value)
+        while not isinstance(search_node, Order):
+            if isinstance(search_node, Draw):
+                remaining_cards.remove(search_node.value)
             search_node = search_node.previous_node
 
-        self.options.extend(Draw(self, card) for card in remaining_cards)
+        order = search_node.value
+
+        if order == 1:
+            self.options.extend(Draw(self, card) for card in remaining_cards)
+
+        else:
+            self.options.extend(
+                (
+                    BonusPlay(self, card)
+                    if card.rank == Rank.FELSO
+                    and Card(card.suit, Rank.KIRALY) in remaining_cards
+                    or card.rank == Rank.KIRALY
+                    and Card(card.suit, Rank.FELSO) in remaining_cards
+                    else Play(self, card)
+                )
+                for card in remaining_cards
+            )
 
 
 class Play(Node):
@@ -158,7 +159,7 @@ class Play(Node):
         super().__init__(previous_node, value)
 
 
-class Bonus(Node):
+class BonusPlay(Play):
     def __init__(self, previous_node, value):
         super().__init__(previous_node, value)
 

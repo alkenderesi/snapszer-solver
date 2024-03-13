@@ -42,8 +42,5 @@ class Card:
         return self.rank.value
 
 
-BONUS_RANKS = frozenset({Rank.FELSO, Rank.KIRALY})
-"""Ranks required for a combination bonus."""
-
 DECK = frozenset(Card(suit, rank) for suit in Suit for rank in Rank)
 """A complete Snapszer deck with all 24 cards."""
