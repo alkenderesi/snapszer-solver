@@ -1,1 +1,1 @@
-# snapszer-python
+# schnapsen-python

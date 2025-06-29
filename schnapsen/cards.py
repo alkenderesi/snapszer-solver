@@ -1,11 +1,11 @@
-"""Card related classes and constants."""
+"""Card-related classes and constants"""
 
 from enum import Enum, IntEnum, auto
 from dataclasses import dataclass
 
 
 class Suit(Enum):
-    """Suits of hungarian-suited playing cards."""
+    """Suits of Hungarian-suited playing cards"""
 
     PIROS = auto()
     ZOLD = auto()
@@ -14,7 +14,7 @@ class Suit(Enum):
 
 
 class Rank(IntEnum):
-    """Ranks of hungarian-suited playing cards."""
+    """Ranks of Hungarian-suited playing cards"""
 
     IX = 0
     ALSO = 2
@@ -26,7 +26,7 @@ class Rank(IntEnum):
 
 @dataclass(frozen=True)
 class Card:
-    """A hungarian-suited playing card."""
+    """Hungarian-suited playing card"""
 
     suit: Suit
     rank: Rank
@@ -43,4 +43,4 @@ class Card:
 
 
 DECK = frozenset(Card(suit, rank) for suit in Suit for rank in Rank)
-"""A complete Snapszer deck with all 24 cards."""
+"""Complete Schnapsen deck with all 24 cards"""
