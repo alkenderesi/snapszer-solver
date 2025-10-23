@@ -1,0 +1,46 @@
+---
+description: "Card elimination tracking system for opponent hand analysis"
+---
+# Card Elimination Tracking System
+
+## Core Concept
+
+Track possible cards in each opponent's hand using elimination logic (not probabilities).
+
+## Implementation Strategy
+
+**Initial State:**
+- Each opponent starts with "could have any card from full deck"
+- Subtract user's cards from all opponents' possible cards
+- If trump card declared by another player, subtract from that player's possible cards
+
+**During Game:**
+- When any card is played → remove from all players' possible cards
+- When user draws a card → remove from all opponents' possible cards
+- When opponent plays specific card → that card eliminated from everyone
+
+**Display:**
+- Show possible cards for each opponent using the matrix format
+- Same matrix design as card input (suits × ranks)
+- Empty cells = card definitely not in that opponent's hand
+- `*` = card could still be in that opponent's hand
+
+## Team Detection
+
+**Track when team membership becomes certain:**
+- Initially: Only starting player knows potential teammates
+- As cards played: Deduce who holds trump card
+- When trump card revealed/played: Announce team membership
+- Handle 3v1 detection (starting player has trump card)
+
+**Announcements:**
+- "P2 has the trump card - they are your teammate!"
+- "You have the trump card - you are playing 3v1!"
+
+## State to Maintain
+
+For each player:
+- Known cards (in hand or played)
+- Possible cards (could be in hand)
+- Whether they are on your team (known/unknown)
+- Current score

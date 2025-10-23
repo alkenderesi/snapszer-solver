@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+---
+# Schnapsen Project Guidelines
+
+This is a recreational hobby project implementing a 4-player team variant of Schnapsen card game.
+
+## Core Principles
+
+- No third-party packages for the Schnapsen implementation
+- Use built-in Python features in their intended ways
+- Keep the code minimalist
+- Follow Python best practices
+- No comments in the source code - the code should explain itself
+- Python 3.13 is used for this project
+
+## Project Architecture
+
+The project has two distinct components:
+
+1. **schnapsen/** - Reusable game library (generic, can be used by other projects)
+   - Contains core game logic: cards, players, rounds, game state
+   - Should remain independent and reusable
+   - No UI or tracker-specific code
+
+2. **tracker/** - Interactive console tracker application
+   - Imports and uses the schnapsen library
+   - Handles user interaction and display
+   - Specific to the game tracking use case
+
+## Code Style
+
+- Use type hints throughout
+- Use dataclasses where appropriate
+- Use Enum/IntEnum for enumerated types
+- Prefer immutability (frozen dataclasses, frozensets)
+- Follow minimalist principles - don't over-engineer

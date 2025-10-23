@@ -1,0 +1,61 @@
+---
+description: "Rules and mechanics of the 4-player team Schnapsen variant being implemented"
+---
+# 4-Player Team Schnapsen Rules
+
+This project implements a specific 4-player team variant of Schnapsen with unique mechanics.
+
+## Card Deck
+
+- 24 cards total: 4 suits × 6 ranks
+- Hungarian suits: PIROS, ZOLD, TOK, MAKK
+- Ranks (with point values): IX (0), ALSO (2), FELSO (3), KIRALY (4), X (10), ASZ (11)
+
+## Game Structure
+
+**One Game consists of:**
+- 6 rounds (each player plays all 6 cards)
+- 4 players, each receives 6 cards at start
+- Starting player chosen at game start
+
+**Round (one round = all 4 players play one card):**
+- Starting player leads with a card
+- Other 3 players follow (counterclockwise)
+- Round winner determined by trump/suit/rank
+- Round winner becomes starting player of next round
+
+## Team Mechanics (Unique Feature)
+
+**Team Formation:**
+- Starting player declares trump card (not just suit - specific card)
+- Trump card's suit becomes trump suit
+- Teams: (Starting player + Trump card holder) vs (Other two players)
+- Special case: If starting player holds trump card → 3v1 situation
+
+**Team Discovery:**
+- Players on non-trump team don't initially know their teammate
+- Team membership becomes certain as cards are revealed/played
+- Tracker should detect and announce when team membership is confirmed
+
+## Trump Declaration
+
+- Starting player draws first 3 cards
+- Declares a specific trump card (not in their hand)
+- This card's suit becomes trump
+- Then starting player sees remaining 3 cards
+- First round begins
+
+## Scoring
+
+- Points collected per round based on card values
+- Game ends after all 6 rounds complete
+- Winner determined by total points
+
+## Tracker Purpose
+
+The tracker assists during physical games by:
+- Recording all card actions (draws, plays, trump declaration)
+- Tracking possible cards in each opponent's hand (elimination-based)
+- Detecting team membership certainty
+- Maintaining scores
+- Tracking one complete game, then exits
