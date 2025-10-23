@@ -1,7 +1,7 @@
 """Card-related classes and constants"""
 
-from enum import Enum, IntEnum, auto
 from dataclasses import dataclass
+from enum import Enum, IntEnum, auto
 
 
 class Suit(Enum):
@@ -33,9 +33,6 @@ class Card:
 
     def __str__(self) -> str:
         return f"{self.suit.name} {self.rank.name}"
-
-    def __hash__(self) -> int:
-        return hash((self.suit, self.rank))
 
     @property
     def value(self) -> int:
