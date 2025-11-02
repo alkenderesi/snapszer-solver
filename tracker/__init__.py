@@ -1,1 +1,0 @@
-"""Schnapsen game tracker application"""
