@@ -1,1 +1,1 @@
-"""Snapszer module"""
+"""Snapszer card game"""

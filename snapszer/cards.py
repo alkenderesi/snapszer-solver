@@ -39,5 +39,5 @@ class Card:
         return self.rank.value
 
 
-DECK = frozenset[Card](Card(suit, rank) for suit in Suit for rank in Rank)
+DECK = frozenset(Card(suit, rank) for suit in Suit for rank in Rank)
 """Complete Snapszer deck with all 24 cards"""
