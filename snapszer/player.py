@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 from snapszer.card import Card
 
 
-@dataclass
 class Player:
-    name: str
-    hand: set[Card]
+    def __init__(self, name: str, starting_position: int):
+        self.name = name
+        self.starting_position = starting_position
+        self.hand: set[Card] = set()
