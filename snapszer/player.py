@@ -1,8 +1,10 @@
-from snapszer.card import Card
+from snapszer.card import Card, DECK
 
 
 class Player:
-    def __init__(self, name: str, starting_position: int):
+    def __init__(self, name: str, hand: set[Card]):
         self.name = name
-        self.starting_position = starting_position
-        self.hand: set[Card] = set()
+        self.hand = hand
+        self.previous: Player = None
+        self.next: Player = None
+        self.score: int = 0

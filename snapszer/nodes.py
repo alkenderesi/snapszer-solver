@@ -1,12 +1,16 @@
+from __future__ import annotations
 from snapszer.card import Card, DECK
+from snapszer.player import Player
 from snapszer.game import Game
 
 
 class Node:
-    def __init__(self, previous: "Node"):
+    choices: list[Node]
+
+    def __init__(self, previous: Node):
         self.previous = previous
         self.next: Node = None
-        self.choices: list[Node] = []
+        self.choices = []
 
     def activate(self):
         raise NotImplementedError
@@ -18,17 +22,16 @@ class Node:
     def game(self) -> Game:
         return self.previous.game
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}{self.choices}"
-
 
 class Root(Node):
+    choices: list[StartingPlayer]
+
     def __init__(self):
         super().__init__(None)
         self._game = Game()
 
     def activate(self):
-        self.choices.extend(Position(self, i+1) for i in range(self.game.player_count))
+        self.choices = [StartingPlayer(self, player) for player in self.game.players]
     
     def deactivate(self):
         self.choices.clear()
@@ -38,53 +41,80 @@ class Root(Node):
         return self._game
 
 
-class Position(Node):
-    def __init__(self, previous: Node, position: int):
+class StartingPlayer(Node):
+    choices: list[Draw | Adu]
+
+    def __init__(self, previous: Node, player: Player):
         super().__init__(previous)
-        self.position = position
+        self.player = player
 
     def activate(self):
         self.previous.next = self
-        self.game.starting_position = self.position
-        if self.game.starting_position == 1:
-            self.choices.extend(CardDraw(self, card) for card in DECK)
+        self.game.starting_player = self.player
+        if self.player is self.game.you:
+            self.choices = [Draw(self, card) for card in DECK]
         else:
-            self.choices.extend(TrumpCard(self, card) for card in DECK)
+            self.choices = [Adu(self, card) for card in DECK]
 
     def deactivate(self):
         self.previous.next = None
-        self.game.starting_position = None
+        self.game.starting_player = None
         self.choices.clear()
 
 
-class CardDraw(Node):
+class Adu(Node):
+    choices: list[Draw]
+
     def __init__(self, previous: Node, card: Card):
         super().__init__(previous)
         self.card = card
 
+    def activate(self):
+        self.previous.next = self
+        self.game.adu = self.card
+        self.choices = [Draw(self, card) for card in DECK - self.game.you.hand]
 
-class TrumpCard(Node):
+    def deactivate(self):
+        self.previous.next = None
+        self.game.adu = None
+        self.choices.clear()
+
+
+class Draw(Node):
+    choices: list[Draw | Adu | Play]
+
     def __init__(self, previous: Node, card: Card):
         super().__init__(previous)
         self.card = card
 
     def activate(self):
         self.previous.next = self
-        self.game.trump_card = self.card
-        if self.game.starting_position == 1:
-            pass
+        self.game.you.hand.add(self.card)
+        for player in self.game.other_players:
+            player.hand.remove(self.card)
+        if len(self.game.you.hand) == self.game.max_hand_size:
+            self.choices = [Play(self, self.game.starting_player, card) for card in self.game.starting_player.hand]
+        elif self.game.starting_player is self.game.you and len(self.game.you.hand) == self.game.max_hand_size // 2:
+            self.choices = [Adu(self, card) for card in DECK]
         else:
-            self.choices.extend(CardDraw(self, card) for card in DECK)
+            self.choices = [Draw(self, card) for card in DECK - self.game.you.hand]
 
     def deactivate(self):
         self.previous.next = None
-        self.game.trump_card = None
+        self.game.you.hand.remove(self.card)
+        for player in self.game.other_players:
+            player.hand.add(self.card)
         self.choices.clear()
 
 
-class CardPlay(Node):
-    pass
+class Play(Node):
+    choices: list[Play | Bonus]
+
+    def __init__(self, previous: Node, player: Player, card: Card):
+        super().__init__(previous)
+        self.player = player
+        self.card = card
 
 
-class CardTrick(Node):
+class Bonus(Node):
     pass
