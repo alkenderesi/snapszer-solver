@@ -1,0 +1,435 @@
+/*
+ * Times New Roman where it is installed, and the metric-compatible Tinos where
+ * it is not. Android has no Times New Roman and quietly substitutes its own
+ * serif for the name, so asking for it by family name alone is not enough.
+ */
+@font-face {
+  font-family: 'Card Serif';
+  src:
+    local('Times New Roman'),
+    local('TimesNewRomanPSMT'),
+    url('../../node_modules/@fontsource/tinos/files/tinos-latin-400-normal.woff2') format('woff2');
+  font-display: block;
+}
+
+:root {
+  color-scheme: only light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #fff;
+  color: #000;
+  overflow: hidden;
+  overscroll-behavior: none;
+  font-family: 'Card Serif', 'Times New Roman', serif;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.viewport {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+/* A 7:5 stage, as large as the screen allows. */
+.stage {
+  position: relative;
+  width: min(100vw, 140dvh);
+  aspect-ratio: 7 / 5;
+  container-type: size;
+}
+
+/* The stage is 140 x 100 units; --u is one of them. */
+.board {
+  position: absolute;
+  inset: 0;
+  --u: calc(100cqw / 140);
+  --k: var(--u);
+  --line: max(1px, calc(var(--u) * 0.11));
+}
+
+.icon {
+  width: calc(var(--u) * 5);
+  height: calc(var(--u) * 5);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.suit,
+.card-back {
+  display: block;
+  pointer-events: none;
+}
+
+/* ---------- Card grids ---------- */
+
+.grid {
+  position: absolute;
+  display: grid;
+  grid-template-columns: repeat(6, var(--cw));
+  column-gap: var(--gx);
+  row-gap: var(--gy);
+}
+
+.grid.compact {
+  --cw: calc(var(--k) * 8.4);
+  --ch: calc(var(--k) * 6);
+  --gx: calc(var(--k) * 0.7);
+  --gy: calc(var(--k) * 0.7);
+}
+
+.grid.seat0.compact {
+  --k: calc(var(--u) * 1.25);
+}
+
+/* T's grid with a result table under every choice. --s shrinks it when announced tables add rows. */
+.grid.tables {
+  --k: calc(var(--u) * var(--s, 1));
+  --cw: calc(var(--k) * 16.4);
+  --ch: calc(var(--k) * 5);
+  --gx: calc(var(--k) * 0.8);
+  --gy: calc(var(--k) * 0.9);
+}
+
+.grid.seat0 {
+  left: 50%;
+  bottom: calc(var(--u) * 1.2);
+  transform: translateX(-50%);
+}
+
+.grid.seat2 {
+  left: 50%;
+  top: calc(var(--u) * 1.5);
+  transform: translateX(-50%);
+}
+
+.grid.seat3 {
+  left: calc(var(--u) * 2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.grid.seat1 {
+  right: calc(var(--u) * 2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--k) * 0.5);
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ch);
+  border: var(--line) solid #000;
+  border-radius: calc(var(--k) * 0.8);
+  background: #fff;
+}
+
+.card .rank {
+  font-size: calc(var(--k) * 3.2);
+  line-height: 1;
+}
+
+.card .suit {
+  height: calc(var(--k) * 3.3);
+}
+
+.cell.off .card {
+  opacity: 0.13;
+}
+
+.cell.dim .card {
+  opacity: 0.4;
+}
+
+.cell.picked .card,
+.cell.armed .card {
+  border-width: calc(var(--line) * 3.5);
+}
+
+.slot {
+  min-height: calc(var(--k) * 10.8);
+}
+
+.table {
+  position: relative;
+  display: grid;
+  /* A narrow column for the score labels leaves the four players more room. */
+  grid-template-columns: 0.55fr repeat(4, 1fr);
+  font-size: calc(var(--k) * 1.8);
+  line-height: calc(var(--k) * 2.16);
+  text-align: center;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.table .label {
+  color: #909090;
+}
+
+/* The 20 or 40 starts level with the score labels under it, which keeps it clear of the frame. */
+.table .bonus {
+  position: relative;
+  left: calc(var(--k) * 0.45);
+}
+
+/* The choice that scores T the most on average. Drawn over the table, so nothing moves. */
+.table.best::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--k) * 0.25) 0 0;
+  border: var(--line) solid #000;
+  border-radius: calc(var(--k) * 0.8);
+  pointer-events: none;
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--u) * 0.7);
+  height: calc(var(--line) * 1.5);
+  background: #000;
+  transition: width 0.1s linear;
+}
+
+/* ---------- The table: trick, adu, outcome ---------- */
+
+.trick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transition: top 0.25s ease;
+}
+
+/* When T's large grid is open the trick moves up out of its way. */
+.board.mine .trick {
+  top: 16.5%;
+}
+
+.played {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 0.3);
+  box-sizing: border-box;
+  width: calc(var(--u) * 6.4);
+  height: calc(var(--u) * 9);
+  margin: calc(var(--u) * -4.5) 0 0 calc(var(--u) * -3.2);
+  border: var(--line) solid #000;
+  border-radius: calc(var(--u) * 0.9);
+  background: #fff;
+}
+
+.played .rank {
+  font-size: calc(var(--u) * 3.5);
+  line-height: 1;
+}
+
+.played .suit {
+  height: calc(var(--u) * 3.7);
+}
+
+/* Each card of the trick sits on its player's side. */
+.played.seat0 {
+  top: calc(var(--u) * 5.4);
+}
+
+.played.seat2 {
+  top: calc(var(--u) * -5.4);
+}
+
+.played.seat3 {
+  left: calc(var(--u) * -7.8);
+}
+
+.played.seat1 {
+  left: calc(var(--u) * 7.8);
+}
+
+/* The adu card, with a dot on the side of the player who called it. */
+.adu {
+  position: absolute;
+  left: calc(var(--u) * 9.5);
+  top: calc(var(--u) * 10);
+}
+
+.dot {
+  position: absolute;
+  width: calc(var(--u) * 1.3);
+  height: calc(var(--u) * 1.3);
+  margin: calc(var(--u) * -0.65);
+  border-radius: 50%;
+  background: #000;
+}
+
+.dot.seat0 {
+  top: calc(var(--u) * 6.4);
+}
+
+.dot.seat2 {
+  top: calc(var(--u) * -6.4);
+}
+
+.dot.seat3 {
+  left: calc(var(--u) * -5.1);
+}
+
+.dot.seat1 {
+  left: calc(var(--u) * 5.1);
+}
+
+.outcome {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--u) * 44);
+  transform: translate(-50%, -50%);
+  --k: calc(var(--u) * 2.4);
+}
+
+/* ---------- Choosing who starts ---------- */
+
+.pick {
+  position: absolute;
+  width: calc(var(--u) * 16);
+  height: calc(var(--u) * 16);
+  margin: calc(var(--u) * -8);
+}
+
+.pick .card-back {
+  width: 100%;
+  height: 100%;
+}
+
+.pick.seat0 {
+  left: 50%;
+  top: 86%;
+}
+
+.pick.seat2 {
+  left: 50%;
+  top: 14%;
+}
+
+.pick.seat3 {
+  left: 10%;
+  top: 50%;
+}
+
+.pick.seat1 {
+  left: 90%;
+  top: 50%;
+}
+
+/* ---------- Back and reset ---------- */
+
+.control {
+  position: absolute;
+  bottom: calc(var(--u) * 2);
+  display: grid;
+  place-items: center;
+  width: calc(var(--u) * 9);
+  height: calc(var(--u) * 9);
+}
+
+.control.back {
+  left: calc(var(--u) * 2);
+}
+
+.control.reset {
+  right: calc(var(--u) * 2);
+}
+
+.control:disabled {
+  opacity: 0.15;
+}
+
+/* ---------- The popup: a card's two plays, or confirming a reset ---------- */
+
+.veil {
+  position: absolute;
+  inset: 0;
+  background: rgb(255 255 255 / 0.55);
+}
+
+.popup {
+  position: absolute;
+  display: flex;
+  gap: calc(var(--u) * 1.2);
+  transform: translate(-50%, -50%);
+}
+
+.option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 0.9);
+  box-sizing: border-box;
+  width: calc(var(--u) * 12);
+  height: calc(var(--u) * 15);
+  border: calc(var(--line) * 3) solid #000;
+  border-radius: calc(var(--u) * 1.5);
+  background: #fff;
+}
+
+.option .face {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.6);
+}
+
+.option .rank {
+  font-size: calc(var(--u) * 4.6);
+  line-height: 1;
+}
+
+.option .suit {
+  height: calc(var(--u) * 4.8);
+}
+
+/* The points an announcement is worth, above the face so both cards keep theirs level. */
+.option .bonus {
+  position: absolute;
+  top: calc(var(--u) * 1);
+  left: 0;
+  right: 0;
+  font-size: calc(var(--u) * 3.2);
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+}
+
+.option .icon {
+  stroke-width: 1.8;
+}
