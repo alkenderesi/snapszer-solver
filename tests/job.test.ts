@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { cardsOf } from '../src/engine/cards.ts'
 import { Game } from '../src/engine/game.ts'
 import { DealSpace } from '../src/solver/deals.ts'
-import { ADU_CHOICES, CELLS, ITERATION_CAP, type Job, JobRunner } from '../src/solver/job.ts'
+import {
+  ADU_CHOICES,
+  bestChoices,
+  CELLS,
+  ITERATION_CAP,
+  type Job,
+  JobRunner,
+} from '../src/solver/job.ts'
 import { Knowledge } from '../src/solver/knowledge.ts'
 import { Solver } from '../src/solver/minimax.ts'
 import games from './fixtures/games.json'
@@ -145,5 +152,77 @@ describe('job runner', () => {
       expect(winners[0]).toBeGreaterThanOrEqual(0)
       expect(winners.reduce((sum, count) => sum + count, 0)).toBeGreaterThanOrEqual(runner.done)
     }
+  })
+})
+
+/** A tally from each choice's counts per seat: `choices[choice][seat]` is that seat's counts of scores 0..3. */
+function tallyOf(choices: number[][][]): Uint32Array {
+  const tally = new Uint32Array(choices.length * CELLS)
+  choices.forEach((seats, choice) =>
+    seats.forEach((counts, seat) => tally.set(counts, choice * CELLS + seat * 4)),
+  )
+  return tally
+}
+
+describe('bestChoices', () => {
+  const others = [
+    [10, 0, 0, 0],
+    [10, 0, 0, 0],
+    [10, 0, 0, 0],
+  ]
+
+  it('picks the choice with the highest mean score', () => {
+    const tally = tallyOf([
+      [[6, 4, 0, 0], ...others],
+      [[3, 7, 0, 0], ...others],
+      [[5, 5, 0, 0], ...others],
+    ])
+    expect(bestChoices(tally, 0)).toEqual(new Set([1]))
+  })
+
+  it('weighs a win by its score', () => {
+    // Three wins of 3 are worth more than eight wins of 1.
+    const tally = tallyOf([
+      [[2, 8, 0, 0], ...others],
+      [[7, 0, 0, 3], ...others],
+    ])
+    expect(bestChoices(tally, 0)).toEqual(new Set([1]))
+  })
+
+  it('returns every choice that ties for the highest', () => {
+    const tally = tallyOf([
+      [[4, 6, 0, 0], ...others],
+      [[5, 5, 0, 0], ...others],
+      [[7, 0, 3, 0], ...others],
+      [[8, 0, 0, 2], ...others],
+    ])
+    expect(bestChoices(tally, 0)).toEqual(new Set([0, 2, 3]))
+  })
+
+  it('returns every choice when the seat never scores', () => {
+    const tally = tallyOf([
+      [[10, 0, 0, 0], ...others],
+      [[10, 0, 0, 0], ...others],
+    ])
+    expect(bestChoices(tally, 0)).toEqual(new Set([0, 1]))
+  })
+
+  it('reads only the column of the seat asked about', () => {
+    const tally = tallyOf([
+      [
+        [9, 1, 0, 0],
+        [0, 0, 0, 10],
+        [0, 0, 0, 10],
+        [0, 0, 0, 10],
+      ],
+      [
+        [8, 2, 0, 0],
+        [10, 0, 0, 0],
+        [10, 0, 0, 0],
+        [10, 0, 0, 0],
+      ],
+    ])
+    expect(bestChoices(tally, 0)).toEqual(new Set([1]))
+    expect(bestChoices(tally, 2)).toEqual(new Set([0]))
   })
 })

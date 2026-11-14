@@ -25,7 +25,8 @@ Live at <https://alkenderesi.github.io/snapszer-solver/>.
 - **Tables.** A column per player (T, B, P, A), a row per score (0 to 3), each
   cell the percentage of iterations. A decision runs for 1,000,000 iterations,
   or until every consistent deal has been visited, in which case the table is
-  exact.
+  exact. The table of the choice that scores T the most on average is framed;
+  choices that tie are all framed.
 
 Perfect play assumes everyone sees every card, so the percentages lean towards
 extreme scores. Trust the ranking of the choices more than the numbers.

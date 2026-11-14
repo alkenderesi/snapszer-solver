@@ -181,6 +181,7 @@ button {
 }
 
 .table {
+  position: relative;
   display: grid;
   /* A narrow column for the score labels leaves the four players more room. */
   grid-template-columns: 0.55fr repeat(4, 1fr);
@@ -192,6 +193,22 @@ button {
 
 .table .label {
   color: #909090;
+}
+
+/* The 20 or 40 starts level with the score labels under it, which keeps it clear of the frame. */
+.table .bonus {
+  position: relative;
+  left: calc(var(--k) * 0.45);
+}
+
+/* The choice that scores T the most on average. Drawn over the table, so nothing moves. */
+.table.best::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--k) * 0.25) 0 0;
+  border: var(--line) solid #000;
+  border-radius: calc(var(--k) * 0.8);
+  pointer-events: none;
 }
 
 .progress {

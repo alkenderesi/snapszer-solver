@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { cardOf, RANK_COUNT, SUIT_COUNT, SUIT_MASKS } from '../engine/cards.ts'
 import { bonusChoice, bonusScore } from '../engine/rules.ts'
-import { CELLS } from '../solver/job.ts'
+import { bestChoices, CELLS } from '../solver/job.ts'
 import type { Progress } from '../solver/pool.ts'
 import { Face } from './faces.tsx'
 import { ResultTable } from './ResultTable.tsx'
@@ -51,6 +51,8 @@ export function Grid({
     scale = Math.min(1, ROOM / height)
   }
   const progress = results?.progress ?? null
+  // Before the first result every choice ties at nothing, which is no ranking.
+  const best = progress && progress.done > 0 ? bestChoices(progress.tally, seat) : null
   const cells = []
   for (let suit = 0; suit < SUIT_COUNT; suit++) {
     for (let rank = 0; rank < RANK_COUNT; rank++) {
@@ -72,6 +74,7 @@ export function Grid({
                   tally={progress?.tally ?? null}
                   offset={plain * CELLS}
                   done={progress?.done ?? 0}
+                  best={best?.has(plain)}
                 />
               )}
               {announced >= 0 && (
@@ -80,6 +83,7 @@ export function Grid({
                   offset={announced * CELLS}
                   done={progress?.done ?? 0}
                   bonus={bonusScore(card, trump)}
+                  best={best?.has(announced)}
                 />
               )}
             </div>

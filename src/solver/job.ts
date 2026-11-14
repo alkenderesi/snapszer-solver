@@ -23,6 +23,26 @@ export interface Job {
   seed: number
 }
 
+/**
+ * Indices, in tally order, of the choices that give `seat` the highest mean
+ * score. Every choice has the same number of iterations, so comparing score
+ * totals compares the means exactly, and choices that tie are all returned.
+ */
+export function bestChoices(tally: Uint32Array, seat: number): Set<number> {
+  const best = new Set<number>()
+  let highest = -1
+  for (let i = 0; i * CELLS < tally.length; i++) {
+    const at = i * CELLS + seat * 4
+    const total = tally[at + 1] + 2 * tally[at + 2] + 3 * tally[at + 3]
+    if (total > highest) {
+      highest = total
+      best.clear()
+    }
+    if (total === highest) best.add(i)
+  }
+  return best
+}
+
 /** Iterations a job will run in total across all workers. */
 export const iterationsOf = (dealCount: number): number => Math.min(dealCount, ITERATION_CAP)
 

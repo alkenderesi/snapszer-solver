@@ -13,10 +13,12 @@ interface Props {
   bonus?: number
   /** Leave cells with no count empty instead of showing 0. */
   sparse?: boolean
+  /** Frame the table: no other choice scores T more on average. */
+  best?: boolean
 }
 
 /** A column per player, a row per score, each cell the percentage of iterations. */
-export function ResultTable({ tally, offset, done, bonus, sparse }: Props) {
+export function ResultTable({ tally, offset, done, bonus, sparse, best }: Props) {
   const cell = (seat: number, score: number): string => {
     if (!tally || done === 0) return ''
     const count = tally[offset + seat * 4 + score]
@@ -24,8 +26,8 @@ export function ResultTable({ tally, offset, done, bonus, sparse }: Props) {
     return String(Math.round((100 * count) / done))
   }
   return (
-    <div className="table">
-      <span>{bonus}</span>
+    <div className={best ? 'table best' : 'table'}>
+      <span className="bonus">{bonus}</span>
       {SEATS.map((name) => (
         <span className="label" key={name}>
           {name}
