@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { cardOf, RANK_COUNT, SUIT_COUNT, SUIT_MASKS } from '../engine/cards.ts'
-import { bonusChoice } from '../engine/rules.ts'
+import { bonusChoice, bonusScore } from '../engine/rules.ts'
 import { CELLS } from '../solver/job.ts'
 import type { Progress } from '../solver/pool.ts'
 import { Face } from './faces.tsx'
@@ -12,11 +12,13 @@ interface Props {
   enabled: number
   /** Mask of the cards whose table also has an announced variant. */
   announceable: number
+  /** The adu suit, which decides whether an announcement is worth 20 or 40. */
+  trump: number
   /** T's own cards, drawn stronger than cards nobody can pick. */
   held: number
   /** Whether held cards are picks already made (dealing) rather than cards in hand. */
   picking: boolean
-  /** The card waiting for confirmation, or -1. */
+  /** The card whose two ways to play it are on offer, or -1. */
   armed: number
   onTap: (card: number, element: HTMLElement) => void
   /** Set when every choice gets a result table: the choices in tally order, and the tallies so far. */
@@ -30,7 +32,17 @@ const GAP = 0.9
 const ROOM = 66.5
 
 /** The 6 × 4 grid of all cards at one seat: a column per rank, a row per suit. */
-export function Grid({ seat, enabled, announceable, held, picking, armed, onTap, results }: Props) {
+export function Grid({
+  seat,
+  enabled,
+  announceable,
+  trump,
+  held,
+  picking,
+  armed,
+  onTap,
+  results,
+}: Props) {
   const tables = results !== null
   let scale = 1
   if (tables) {
@@ -67,7 +79,7 @@ export function Grid({ seat, enabled, announceable, held, picking, armed, onTap,
                   tally={progress?.tally ?? null}
                   offset={announced * CELLS}
                   done={progress?.done ?? 0}
-                  announced
+                  bonus={bonusScore(card, trump)}
                 />
               )}
             </div>

@@ -33,20 +33,6 @@ export const Check = () => (
   </Icon>
 )
 
-/** The mark for an announcement: a check inside a ring. */
-export const RingedCheck = () => (
-  <Icon>
-    <circle cx="12" cy="12" r="10" />
-    <path d="M7.5 12.3l3.2 3.2 5.8-6.4" />
-  </Icon>
-)
-
-export const Ring = () => (
-  <Icon>
-    <circle cx="12" cy="12" r="7" />
-  </Icon>
-)
-
 export const BackIcon = () => (
   <Icon>
     <path d="M10.5 5.5L4 12l6.5 6.5M4.5 12H20" />

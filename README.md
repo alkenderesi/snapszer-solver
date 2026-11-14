@@ -33,16 +33,19 @@ extreme scores. Trust the ranking of the choices more than the numbers.
 ## Using it
 
 Seats are T (you, bottom), B (right), P (top) and A (left), played in that
-order. Every tap needs a second, confirming tap.
+order. A tap counts straight away.
 
 1. Tap the card-back of whoever starts.
 2. If you start: pick your first three cards, choose the adu, pick your other
    three. Otherwise: enter the adu the starter called, then your six cards.
 3. Enter each card as it is played, on the grid at that player's seat. A Felső
-   or Király led from a pair offers a second button for the 20/40 announcement.
+   or Király that could be led from a pair asks how it was played: plain, or
+   with the announcement, marked 20 or 40. A card that is the only one possible
+   is entered for you.
 
-The arrow undoes the last tap and the circular arrow starts over. The game is
-saved in the browser, so reloading resumes it.
+The arrow undoes the last tap, along with any cards entered for you after it.
+The circular arrow starts over, after a confirming tap. The game is saved in
+the browser, so reloading resumes it.
 
 ## Development
 

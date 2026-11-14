@@ -5,6 +5,7 @@ import {
   FULL_DECK,
   HAND_SIZE,
   KIRALY,
+  lowestCard,
   PLAYER_COUNT,
   popcount,
   rankOf,
@@ -22,7 +23,7 @@ export const B = 1
 export const P = 2
 export const A = 3
 
-/** One confirmed tap. A game is nothing more than the list of these. */
+/** One step entered: a tap, or a play nothing else was possible for. A game is the list of these. */
 export type Input =
   | { type: 'starter'; seat: number }
   | { type: 'deal'; card: number }
@@ -202,9 +203,32 @@ export function derive(history: readonly Input[]): View {
   return view
 }
 
-/** The input a confirmed tap on `card` makes in the current phase. */
+/** The input a tap on `card` makes in the current phase. */
 export function inputFor(view: View, card: number, announce: boolean): Input {
   if (view.phase === 'deal') return { type: 'deal', card }
   if (view.phase === 'adu') return { type: 'adu', card }
   return { type: 'choice', choice: announce ? bonusChoice(card) : card }
+}
+
+/** The only input the position allows, or null when there is a choice to make or nothing to do. */
+export function forcedInput(view: View): Input | null {
+  if (view.announceable !== 0 || popcount(view.enabled) !== 1) return null
+  return inputFor(view, lowestCard(view.enabled), false)
+}
+
+/** Enters every forced input, so the game always rests on a real choice or its end. */
+export function settle(history: readonly Input[]): Input[] {
+  const settled = [...history]
+  for (;;) {
+    const forced = forcedInput(derive(settled))
+    if (!forced) return settled
+    settled.push(forced)
+  }
+}
+
+/** Takes back the last tap, together with the forced inputs that followed it. */
+export function undo(history: readonly Input[]): Input[] {
+  const rest = history.slice(0, -1)
+  while (rest.length > 0 && forcedInput(derive(rest))) rest.pop()
+  return rest
 }

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { derive, type Input, inputFor } from '../app/history.ts'
+import { derive, type Input, inputFor, settle, undo } from '../app/history.ts'
 import { loadHistory, saveHistory } from '../app/store.ts'
+import { suitOf } from '../engine/cards.ts'
+import { bonusScore } from '../engine/rules.ts'
 import { SolverPool } from '../solver/pool.ts'
-import { BackIcon, CardBack, Check, Face, ResetIcon, RingedCheck } from './faces.tsx'
+import { BackIcon, CardBack, Check, Face, ResetIcon } from './faces.tsx'
 import { Grid } from './Grid.tsx'
 import { ResultTable } from './ResultTable.tsx'
 
@@ -11,12 +13,12 @@ const pool = new SolverPool()
 /** The stage is 140 × 100 units; everything is placed and sized in these. */
 const STAGE_WIDTH = 140
 const STAGE_HEIGHT = 100
-/** A confirm button ignores taps this soon after appearing, so one bouncing tap cannot confirm. */
-const CONFIRM_DELAY = 250
+/** A popup button ignores taps this soon after appearing, so one bouncing tap cannot press it. */
+const POPUP_DELAY = 250
 
-/** Something that needs a second, confirming tap. */
-type Target = { kind: 'card'; card: number } | { kind: 'starter'; seat: number } | { kind: 'reset' }
-/** A target tapped once: where to show its confirm buttons, and when it was tapped. */
+/** A tap that needs a second one: a card with two ways to play it, or the reset. */
+type Target = { kind: 'card'; card: number } | { kind: 'reset' }
+/** A target tapped once: where to show its popup, and when it was tapped. */
 type Armed = Target & { x: number; y: number; at: number }
 
 export function App() {
@@ -44,14 +46,17 @@ export function App() {
       at: performance.now(),
     })
   }
-  const confirm = (act: () => void) => () => {
-    if (!armed || performance.now() - armed.at < CONFIRM_DELAY) return
+  const press = (act: () => void) => () => {
+    if (!armed || performance.now() - armed.at < POPUP_DELAY) return
     setArmed(null)
     act()
   }
-  const push = (input: Input) => setHistory((inputs) => [...inputs, input])
+  const push = (input: Input) => setHistory((inputs) => settle([...inputs, input]))
+  const tap = (card: number, element: HTMLElement) => {
+    if (view.announceable & (1 << card)) arm({ kind: 'card', card }, element)
+    else push(inputFor(view, card, false))
+  }
 
-  const announce = armed?.kind === 'card' && (view.announceable & (1 << armed.card)) !== 0
   const final = useMemo(() => {
     if (!view.outcome) return null
     const tally = new Uint32Array(16)
@@ -68,7 +73,7 @@ export function App() {
               <button
                 className={`pick seat${seat}`}
                 key={seat}
-                onClick={(event) => arm({ kind: 'starter', seat }, event.currentTarget)}
+                onClick={() => push({ type: 'starter', seat })}
               >
                 <CardBack />
               </button>
@@ -102,10 +107,11 @@ export function App() {
               seat={view.active}
               enabled={view.enabled}
               announceable={view.announceable}
+              trump={suitOf(view.adu)}
               held={view.active === 0 ? view.hand : 0}
               picking={view.phase === 'deal'}
               armed={armed?.kind === 'card' ? armed.card : -1}
-              onTap={(card, element) => arm({ kind: 'card', card }, element)}
+              onTap={tap}
               results={view.job ? { choices: view.job.choices, progress } : null}
             />
           )}
@@ -113,7 +119,7 @@ export function App() {
           <button
             className="control back"
             disabled={history.length === 0}
-            onClick={() => setHistory((inputs) => inputs.slice(0, -1))}
+            onClick={() => setHistory(undo)}
           >
             <BackIcon />
           </button>
@@ -131,45 +137,33 @@ export function App() {
               <div
                 className="popup"
                 style={{
-                  left: `${(100 * clamp(armed.x, announce ? 14.5 : 8, STAGE_WIDTH)) / STAGE_WIDTH}%`,
+                  left: `${(100 * clamp(armed.x, armed.kind === 'card' ? 14.5 : 8, STAGE_WIDTH)) / STAGE_WIDTH}%`,
                   top: `${(100 * clamp(armed.y, 9.5, STAGE_HEIGHT)) / STAGE_HEIGHT}%`,
                 }}
               >
                 {armed.kind === 'card' && (
                   <>
                     <button
-                      className="confirm"
-                      onClick={confirm(() => push(inputFor(view, armed.card, false)))}
+                      className="option"
+                      onClick={press(() => push(inputFor(view, armed.card, false)))}
                     >
                       <span className="face">
                         <Face card={armed.card} />
                       </span>
-                      <Check />
                     </button>
-                    {announce && (
-                      <button
-                        className="confirm"
-                        onClick={confirm(() => push(inputFor(view, armed.card, true)))}
-                      >
-                        <span className="face">
-                          <Face card={armed.card} />
-                        </span>
-                        <RingedCheck />
-                      </button>
-                    )}
+                    <button
+                      className="option"
+                      onClick={press(() => push(inputFor(view, armed.card, true)))}
+                    >
+                      <span className="bonus">{bonusScore(armed.card, suitOf(view.adu))}</span>
+                      <span className="face">
+                        <Face card={armed.card} />
+                      </span>
+                    </button>
                   </>
                 )}
-                {armed.kind === 'starter' && (
-                  <button
-                    className="confirm"
-                    onClick={confirm(() => push({ type: 'starter', seat: armed.seat }))}
-                  >
-                    <CardBack />
-                    <Check />
-                  </button>
-                )}
                 {armed.kind === 'reset' && (
-                  <button className="confirm" onClick={confirm(() => setHistory([]))}>
+                  <button className="option" onClick={press(() => setHistory([]))}>
                     <ResetIcon />
                     <Check />
                   </button>

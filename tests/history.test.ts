@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { derive, type Input, inputFor, T } from '../src/app/history.ts'
+import {
+  B,
+  derive,
+  forcedInput,
+  type Input,
+  inputFor,
+  settle,
+  T,
+  undo,
+} from '../src/app/history.ts'
 import { cardsOf, cardOf, FELSO, KIRALY, PIROS } from '../src/engine/cards.ts'
 import { bonusChoice, choiceCard, isBonus } from '../src/engine/rules.ts'
 import games from './fixtures/games.json'
@@ -80,13 +89,21 @@ describe('derive', () => {
     let view = derive(history)
     expect(view.announceable).toBe((1 << felso) | (1 << kiraly))
     expect(view.job?.choices).toEqual([0, 1, 2, 3, 4, 5, bonusChoice(felso), bonusChoice(kiraly)])
-    history.push(inputFor(view, kiraly, true))
-    view = derive(history)
-    // Having announced, only that card can be played, and it still needs a tap.
+    expect(forcedInput(view)).toBeNull()
+    const announced = [...history, inputFor(view, kiraly, true)]
+    view = derive(announced)
+    // Having announced, only that card can be played.
     expect(view.active).toBe(T)
     expect(view.enabled).toBe(1 << kiraly)
     expect(view.announceable).toBe(0)
     expect(view.job?.choices).toEqual([kiraly])
+    expect(forcedInput(view)).toEqual({ type: 'choice', choice: kiraly })
+    // So it is played without a tap, and taken back together with the announcement.
+    const settled = settle(announced)
+    view = derive(settled)
+    expect(view.trick).toEqual([kiraly])
+    expect(view.active).toBe(B)
+    expect(undo(settled)).toEqual(history)
   })
 
   it('rejects inputs that cannot happen', () => {
@@ -125,5 +142,31 @@ describe('derive', () => {
       // Undoing the last input goes back to the last decision.
       expect(derive(history.slice(0, -1)).phase).toBe('play')
     }
+  }, 120_000)
+
+  it('enters forced plays by itself and takes them back with the tap before them', () => {
+    let forcedPlays = 0
+    for (const fixture of (games as FixtureGame[]).slice(0, 120)) {
+      const setup = setupInputs(fixture)
+      let history = settle(setup)
+      expect(history).toEqual(setup)
+      fixture.decisions.forEach(([seat, chosen, ...legal], i) => {
+        if (history.length > setup.length + i) {
+          // Already entered: it has to be what was actually played.
+          expect(history[setup.length + i]).toEqual({ type: 'choice', choice: chosen })
+          forcedPlays++
+          return
+        }
+        const view = derive(history)
+        expect(forcedInput(view)).toBeNull()
+        if (seat === T) expect(legal.length).toBeGreaterThan(1)
+        const before = history
+        history = settle([...history, inputFor(view, choiceCard(chosen), isBonus(chosen))])
+        expect(undo(history)).toEqual(before)
+      })
+      expect(history.length).toBe(setup.length + fixture.decisions.length)
+      expect(derive(history).phase).toBe('over')
+    }
+    expect(forcedPlays).toBeGreaterThan(0)
   }, 120_000)
 })
